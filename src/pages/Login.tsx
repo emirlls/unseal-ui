@@ -46,8 +46,6 @@ export const Login = () => {
         <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-center py-12 px-4 font-sans text-gray-900">
             <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
                 <h1 className="text-5xl font-black text-[#7c3aed] tracking-tighter mb-4 font-serif italic">Unseal</h1>
-                <h2 className="text-2xl font-extrabold text-gray-800">Tekrar Hoş Geldin</h2>
-                <p className="mt-2 text-sm text-gray-500 font-medium tracking-tight">Kaldığın yerden devam etmeye hazır mısın?</p>
             </div>
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
