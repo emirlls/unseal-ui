@@ -18,10 +18,10 @@ const icon = L.icon({
 });
 
 const LocationMarker = ({ setGeoJson }: { setGeoJson: (json: string) => void }) => {
-    const [position, setPosition] = useState<any | null>(null);
+    const [position, setPosition] = useState<LatLng | null>(null);
 
     useMapEvents({
-        click(e: any) {
+        click(e: LeafletMouseEvent) {
             const { lat, lng } = e.latlng;
             setPosition(e.latlng);
 
