@@ -7,7 +7,9 @@ import {
     PaperAirplaneIcon,
     LockClosedIcon,
     XMarkIcon,
-    PlayIcon
+    PlayIcon,
+    QrCodeIcon,
+    ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 
 export const CapsuleDetail = () => {
@@ -20,6 +22,11 @@ export const CapsuleDetail = () => {
     // Modal Stateleri
     const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
     const [isLikesModalOpen, setIsLikesModalOpen] = useState(false);
+    
+    // --- QR STATE'LERİ ---
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+    const [isQrLoading, setIsQrLoading] = useState(false);
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -35,7 +42,34 @@ export const CapsuleDetail = () => {
         fetchDetail();
     }, [id]);
 
-    // Medya tipine göre component dönen fonksiyon
+    // QR Oluşturma Fonksiyonu
+   const handleGenerateQr = async () => {
+    setIsQrModalOpen(true);
+    if (qrCode) return; 
+
+    setIsQrLoading(true);
+    try {
+        const res = await axiosInstance.get(`/api/capsule/${id}/qr-code`);
+        
+        if (res.data && res.data.data) {
+            setQrCode(res.data.data); 
+        }
+    } catch (err) {
+        console.error("QR üretilemedi", err);
+    } finally {
+        setIsQrLoading(false);
+    }
+};
+
+    // QR İndirme Fonksiyonu
+    const downloadQr = () => {
+        if (!qrCode) return;
+        const link = document.createElement("a");
+        link.href = `data:image/png;base64,${qrCode}`;
+        link.download = `capsule-${id}-qr.png`;
+        link.click();
+    };
+
     const renderMediaContent = (url: string, isFullSize: boolean = false) => {
         const ext = url.split('.').pop()?.toLowerCase();
         const className = isFullSize
@@ -80,7 +114,7 @@ export const CapsuleDetail = () => {
     return (
         <div className="min-h-screen bg-[#f8fafc] relative">
 
-            {/* 1. MEDYA MODAL (Resim/Video/Ses Tam Ekran) */}
+            {/* 1. MEDYA MODAL */}
             {isMediaModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
                     <button onClick={() => setIsMediaModalOpen(false)} className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all">
@@ -92,7 +126,54 @@ export const CapsuleDetail = () => {
                 </div>
             )}
 
-            {/* 2. BEĞENENLER MODAL */}
+            {/* 2. QR KOD MODAL */}
+            {isQrModalOpen && (
+                <div className="fixed inset-0 z-[110] bg-purple-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-sm rounded-[3rem] shadow-2xl overflow-hidden p-8 flex flex-col items-center text-center space-y-6 relative">
+                        <button 
+                            onClick={() => setIsQrModalOpen(false)}
+                            className="absolute top-6 right-6 p-2 bg-gray-50 text-gray-400 hover:text-gray-900 rounded-full transition-colors"
+                        >
+                            <XMarkIcon className="w-6 h-6" />
+                        </button>
+
+                        <div className="bg-purple-50 p-4 rounded-3xl">
+                            <QrCodeIcon className="w-10 h-10 text-[#7c3aed]" />
+                        </div>
+
+                        <div>
+                            <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Kapsül QR Kodu</h3>
+                            <p className="text-sm text-gray-500 font-medium px-4">Bu kodu okutarak kapsüle hızlıca erişebilirsin.</p>
+                        </div>
+
+                        <div className="relative w-64 h-64 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-purple-100 flex items-center justify-center overflow-hidden">
+    {isQrLoading ? (
+        <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-4 border-t-[#7c3aed] border-purple-100 rounded-full animate-spin"></div>
+            <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Üretiliyor...</p>
+        </div>
+    ) : qrCode ? (
+        <img 
+            src={`data:image/png;base64,${qrCode}`} 
+            className="w-full h-full p-6 animate-in zoom-in duration-500 object-contain" 
+            alt="Capsule QR" 
+        />
+    ) : null}
+</div>
+
+                        <button 
+                            disabled={isQrLoading}
+                            onClick={downloadQr}
+                            className="w-full flex items-center justify-center gap-3 bg-[#7c3aed] text-white py-4 rounded-2xl font-black hover:bg-[#6d28d9] transition-all shadow-xl shadow-purple-100 active:scale-95 disabled:opacity-50"
+                        >
+                            <ArrowDownTrayIcon className="w-5 h-5" />
+                            QR KODU İNDİR
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* 3. BEĞENENLER MODAL (Aynen Kalıyor) */}
             {isLikesModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -123,20 +204,30 @@ export const CapsuleDetail = () => {
 
             {/* ÜST BAR */}
             <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 p-4">
-                <div className="max-w-6xl mx-auto flex items-center gap-4">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="p-2.5 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-2xl transition-all group shadow-lg shadow-purple-200"
+                <div className="max-w-6xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-2.5 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-2xl transition-all group shadow-lg shadow-purple-200"
+                        >
+                            <ArrowLeftIcon className="w-6 h-6 text-white group-hover:-translate-x-1 transition-transform" />
+                        </button>
+                        <h2 className="text-lg font-black text-gray-900 tracking-tight">Kapsül Detayı</h2>
+                    </div>
+                    
+                    {/* QR BUTONU (ÜST BARDA) */}
+                    <button 
+                        onClick={handleGenerateQr}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-purple-100 text-[#7c3aed] rounded-2xl font-black text-sm hover:bg-purple-50 transition-all shadow-sm"
                     >
-                        <ArrowLeftIcon className="w-6 h-6 text-white group-hover:-translate-x-1 transition-transform" />
+                        <QrCodeIcon className="w-5 h-5" />
+                        <span>QR KOD</span>
                     </button>
-                    <h2 className="text-lg font-black text-gray-900 tracking-tight">Kapsül Detayı</h2>
                 </div>
             </div>
 
             <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8">
-
-                {/* HERO SECTION */}
+                {/* ... (Hero Section ve Medya Kartı Aynen Kalıyor) ... */}
                 <div className="bg-white p-6 md:p-10 rounded-[3rem] shadow-sm border border-gray-100">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex items-center gap-5">
@@ -153,7 +244,7 @@ export const CapsuleDetail = () => {
                                 </div>
                             </div>
                             <div>
-                                <h1 className="text-xl font-thin text-gray-900 tracking-tight mb-1">{capsule.name}</h1>
+                                <h1 className="text-xl font-black text-gray-900 tracking-tight mb-1">{capsule.name}</h1>
                                 <p className="text-gray-500 font-medium">@{capsule.creatorUserName?.split('@')[0]}</p>
                             </div>
                         </div>
@@ -172,7 +263,6 @@ export const CapsuleDetail = () => {
                     </div>
                 </div>
 
-                {/* GÖRSEL/MEDYA KARTI (Tıklanabilir) */}
                 <div
                     onClick={() => setIsMediaModalOpen(true)}
                     className="relative rounded-[3.5rem] overflow-hidden shadow-2xl bg-white border-[12px] border-white group cursor-zoom-in"
@@ -187,8 +277,7 @@ export const CapsuleDetail = () => {
 
                 {/* ETKİLEŞİM VE YORUMLAR */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                    {/* Beğenenler (4 Column) */}
+                    {/* ... (Beğenenler ve Yorumlar Bölümü Aynen Kalıyor) ... */}
                     <div className="lg:col-span-4 space-y-6">
                         <div
                             onClick={() => setIsLikesModalOpen(true)}
@@ -212,15 +301,11 @@ export const CapsuleDetail = () => {
                                         +{capsule.likeDtos.length - 5}
                                     </div>
                                 )}
-                                {(!capsule.likeDtos || capsule.likeDtos.length === 0) && (
-                                    <p className="text-gray-400 text-sm italic py-2">Henüz beğeni yok.</p>
-                                )}
                             </div>
                             <p className="text-[10px] text-[#7c3aed] font-bold mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Tümünü gör →</p>
                         </div>
                     </div>
 
-                    {/* Yorumlar (8 Column) */}
                     <div className="lg:col-span-8 bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col min-h-[500px]">
                         <h4 className="font-black text-gray-900 mb-6 px-2 flex items-center gap-2 text-lg">
                             <ChatBubbleOvalLeftIcon className="w-6 h-6 text-[#7c3aed]" />
@@ -243,7 +328,6 @@ export const CapsuleDetail = () => {
                             ))}
                         </div>
 
-                        {/* Yorum Input */}
                         <div className="mt-6 flex items-center gap-3">
                             <input
                                 type="text"

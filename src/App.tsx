@@ -4,6 +4,7 @@ import { Register } from './pages/Register';
 import { ResetPassword } from './pages/ResetPassword';
 import { Home } from './pages/Home';
 import { CapsuleDetail } from './pages/CapsuleDetail';
+import { Profile } from './pages/Profile';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
@@ -16,7 +17,8 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route path="/home" element={<Home />} />
-
+<Route path="/profile/:id" element={<Profile />} />
+  <Route path="/profile" element={<Profile />} />
         {/*detay sayfası*/}
         <Route path="/capsule/:id" element={<CapsuleDetail />} />
 
